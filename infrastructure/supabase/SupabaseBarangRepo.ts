@@ -184,25 +184,29 @@ async updateStok(input: {
     }
   }
 // Terima parameter opsional
-async getAllRiwayat(filters?: DashboardFilterParams): Promise<RiwayatItem[]> {
+// ... kode sebelumnya ...
+
+  // Method ini dipakai oleh Dashboard & PDF Export
+  async getAllRiwayat(filters?: DashboardFilterParams): Promise<RiwayatDetail[]> {
     const supabase = await createClient();
 
     let query = supabase
       .from('riwayat_transaksi')
       .select(`
-        id, created_at, tipe_transaksi, jumlah,
+        id, created_at, tipe_transaksi, jumlah, user_id,
         master_barang ( nama_barang, satuan ),
-        master_lokasi ( nama_lokasi ),
+        master_lokasi ( 
+          nama_lokasi,
+          master_pt ( nama_pt )
+        ),
         master_kategori ( nama_kategori )
       `)
       .order('created_at', { ascending: true });
 
-    // FILTER 1: Lokasi
+    // Filter Logic
     if (filters?.lokasiId) {
       query = query.eq('lokasi_id', filters.lokasiId);
     }
-
-    // FILTER 2: Kategori (BARU)
     if (filters?.kategoriId) {
       query = query.eq('kategori_id', filters.kategoriId);
     }
@@ -214,16 +218,26 @@ async getAllRiwayat(filters?: DashboardFilterParams): Promise<RiwayatItem[]> {
       return [];
     }
 
-    // Mapping... (Kode bawahnya SAMA SAJA)
+    // --- REVISI MAPPING DI SINI ---
+    // Sebelumnya hanya return id, tanggal, tipe, jumlah.
+    // Sekarang kita lengkapi agar PDF bisa membacanya.
     return data.map((d: any) => ({
-      // ...
       id: d.id,
       tanggal: d.created_at,
       tipe: d.tipe_transaksi,
-      jumlah: Number(d.jumlah)
-      // ...
+      jumlah: Number(d.jumlah),
+      
+      // Data Tambahan untuk PDF:
+      namaBarang: d.master_barang?.nama_barang || 'Dihapus',
+      satuan: d.master_barang?.satuan || '',
+      namaLokasi: d.master_lokasi?.nama_lokasi || 'Dihapus',
+      namaPt: d.master_lokasi?.master_pt?.nama_pt || '-',
+      namaKategori: d.master_kategori?.nama_kategori || '-',
+      userEmail: 'Admin' // Atau ambil dari d.user_id jika ada relasi
     }));
   }
+
+  // ... kode sesudahnya ...
 async getRiwayatList(): Promise<RiwayatDetail[]> {
     const supabase = await createClient();
 
@@ -238,6 +252,7 @@ async getRiwayatList(): Promise<RiwayatDetail[]> {
         user_id,
         master_barang ( nama_barang, satuan ),
         master_lokasi ( nama_lokasi ),
+        
         master_kategori ( nama_kategori )
       `)
       .order('created_at', { ascending: false });
@@ -254,6 +269,7 @@ async getRiwayatList(): Promise<RiwayatDetail[]> {
       namaBarang: d.master_barang?.nama_barang || 'Barang Dihapus',
       satuan: d.master_barang?.satuan || '',
       namaLokasi: d.master_lokasi?.nama_lokasi || 'Lokasi Dihapus',
+      namaPt: d.master_lokasi?.master_pt?.nama_pt || '-',
       namaKategori: d.master_kategori?.nama_kategori || '-',
       tipe: d.tipe_transaksi,
       jumlah: Number(d.jumlah),

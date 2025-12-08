@@ -27,6 +27,7 @@ export interface RiwayatDetail {
   tanggal: string; // ISO String
   namaBarang: string;
   namaLokasi: string;
+  namaPt: string;
   namaKategori: string;
   tipe: 'masuk' | 'keluar';
   jumlah: number;

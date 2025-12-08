@@ -33,9 +33,8 @@ export default function LineChartCard({ data, isEditable }: Props) {
     return base;
   };
 
-const formatValue = (value: any) => {
+  const formatValue = (value: any) => {
     const num = Number(value);
-    // Gunakan toLocaleString agar ada titik ribuannya (10.000)
     if (num > 0) return num.toLocaleString('id-ID'); 
     return ""; 
   };
@@ -72,47 +71,28 @@ const formatValue = (value: any) => {
             margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-            
-            {/* Sumbu Angka (Bawah) */}
             <XAxis 
               type="number" 
               axisLine={false} 
               tickLine={false} 
-              tick={axisStyle} // <-- Pakai Style Gelap
+              tick={axisStyle} 
             />
-            
-            {/* Sumbu Kategori (Kiri) */}
             <YAxis 
               dataKey="name" 
               type="category" 
               axisLine={false} 
               tickLine={false} 
               width={30} 
-              tick={axisStyle} // <-- Pakai Style Gelap
+              tick={axisStyle} 
             />
-            
             <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={tooltipStyle} />
             <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px', color: '#334155' }} />
             
             <Bar dataKey="masuk" name="Masuk" fill="#10b981" radius={[0, 4, 4, 0]} barSize={30}>
-              <LabelList 
-                dataKey="masuk" 
-                position="insideRight" 
-                fill="white" 
-                fontSize={11} 
-                fontWeight="bold" // <-- Tebalkan Teks Putih
-                formatter={formatValue} 
-              />
+              <LabelList dataKey="masuk" position="insideRight" fill="white" fontSize={11} fontWeight="bold" formatter={formatValue} />
             </Bar>
             <Bar dataKey="keluar" name="Keluar" fill="#f97316" radius={[0, 4, 4, 0]} barSize={30}>
-              <LabelList 
-                dataKey="keluar" 
-                position="insideRight" 
-                fill="white" 
-                fontSize={11} 
-                fontWeight="bold" 
-                formatter={formatValue} 
-              />
+              <LabelList dataKey="keluar" position="insideRight" fill="white" fontSize={11} fontWeight="bold" formatter={formatValue} />
             </Bar>
           </BarChart>
         );
@@ -122,40 +102,16 @@ const formatValue = (value: any) => {
         return (
           <BarChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-            <XAxis 
-              dataKey="name" 
-              axisLine={false} 
-              tickLine={false} 
-              dy={10} 
-              tick={axisStyle} // <-- Pakai Style Gelap
-            />
-            <YAxis 
-              axisLine={false} 
-              tickLine={false} 
-              tick={axisStyle} // <-- Pakai Style Gelap
-            />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} dy={10} tick={axisStyle} />
+            <YAxis axisLine={false} tickLine={false} tick={axisStyle} />
             <Tooltip cursor={{ fill: '#f1f5f9' }} contentStyle={tooltipStyle} />
             <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
             
             <Bar dataKey="masuk" name="Masuk" fill="#10b981" radius={[4, 4, 0, 0]}>
-              <LabelList 
-                dataKey="masuk" 
-                position="top" 
-                fill="#10b981"  // Warna Hijau Tua
-                fontSize={11} 
-                fontWeight="bold" // <-- Tebalkan
-                formatter={formatValue} 
-              />
+              <LabelList dataKey="masuk" position="top" fill="#10b981" fontSize={11} fontWeight="bold" formatter={formatValue} />
             </Bar>
             <Bar dataKey="keluar" name="Keluar" fill="#f97316" radius={[4, 4, 0, 0]}>
-              <LabelList 
-                dataKey="keluar" 
-                position="top" 
-                fill="#f97316" // Warna Oranye Tua
-                fontSize={11} 
-                fontWeight="bold" // <-- Tebalkan
-                formatter={formatValue} 
-              />
+              <LabelList dataKey="keluar" position="top" fill="#f97316" fontSize={11} fontWeight="bold" formatter={formatValue} />
             </Bar>
           </BarChart>
         );
@@ -202,7 +158,8 @@ const formatValue = (value: any) => {
   };
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border h-full flex flex-col">
+    // PENTING: ID 'dashboard-chart-area' INI WAJIB ADA AGAR PDF EXPORT BISA SCREENSHOT GRAFIK
+    <div id="dashboard-chart-area" className="bg-white p-4 md:p-6 rounded-xl shadow-sm border h-full flex flex-col">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 flex-shrink-0">
         <div>
           <h3 className="text-lg font-bold text-slate-800">Tren Arus Barang</h3>

@@ -3,6 +3,8 @@ import { GetDashboardData } from "@/core/use-cases/GetDashboardData";
 import LineChartCard from "./components/LineChartCard";
 import DashboardTable from "./components/DashboardTable";
 import DashboardFilter from "./components/DashboardFilter";
+// PENTING: JANGAN LUPA IMPORT PDF BUTTON
+import PdfExportButton from "./components/PdfExportButton"; 
 import { createClient } from "@/utils/supabase/server";
 import { Metadata } from "next";
 
@@ -25,7 +27,7 @@ export default async function Home({
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
-  // 1. Tunggu Params (Next.js 15 Async Params)
+  // 1. Tunggu Params
   const params = await searchParams;
   const filterLokasi = params.lokasiId ? Number(params.lokasiId) : undefined;
   const filterKategori = params.kategoriId ? Number(params.kategoriId) : undefined;
@@ -36,13 +38,13 @@ export default async function Home({
   const lokasiOpts = await repo.getLokasiOptions();
   const kategoriOpts = await repo.getKategoriOptions();
 
-  // 2. Initial State (Tambahkan saldoAwal)
+  // Initial State
   let stats = { 
     grafikData: [], 
     totalTransaksi: 0, 
     totalMasuk: 0, 
     totalKeluar: 0,
-    saldoAwal: 0 // <--- Default value untuk Saldo Awal
+    saldoAwal: 0 
   };
 
   try {
@@ -60,6 +62,9 @@ export default async function Home({
   // Helper Format Angka
   const formatNumber = (num: number) => num.toLocaleString('id-ID');
 
+  // HITUNG SALDO AKHIR (Saldo Awal + Masuk - Keluar)
+  const saldoAkhir = stats.saldoAwal + stats.totalMasuk - stats.totalKeluar;
+
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-100px)]">
       
@@ -75,32 +80,52 @@ export default async function Home({
            </p>
         </div>
 
-        <DashboardFilter 
-          lokasiOptions={lokasiOpts} 
-          kategoriOptions={kategoriOpts} 
-        />
+        <div className="flex flex-wrap gap-2">
+          {/* TOMBOL PDF EXPORT (FITUR SEBELUMNYA) */}
+          <PdfExportButton 
+            lokasiId={filterLokasi}
+            kategoriId={filterKategori}
+            labelLokasi={labelLokasi || "Semua"}
+            chartId="dashboard-chart-area" // ID yang ada di LineChartCard
+          />
+
+          <DashboardFilter 
+            lokasiOptions={lokasiOpts} 
+            kategoriOptions={kategoriOpts} 
+          />
+        </div>
       </div>
 
-      {/* KARTU STATISTIK RINGKAS */}
+      {/* KARTU STATISTIK RINGKAS (REVISI: MASUK, KELUAR, SALDO AKHIR) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 flex-shrink-0">
-        <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
-            <h3 className="text-sm font-medium text-slate-500">Total Transaksi</h3>
-            <p className="text-3xl font-bold text-slate-800 mt-2">
-              {formatNumber(stats.totalTransaksi)}
-            </p>
-        </div>
+        
+        {/* KARTU 1: TOTAL MASUK */}
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
             <h3 className="text-sm font-medium text-slate-500">Total Masuk</h3>
             <p className="text-3xl font-bold text-green-600 mt-2">
               +{formatNumber(stats.totalMasuk)}
             </p>
         </div>
+
+        {/* KARTU 2: TOTAL KELUAR */}
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
             <h3 className="text-sm font-medium text-slate-500">Total Keluar</h3>
             <p className="text-3xl font-bold text-orange-600 mt-2">
               -{formatNumber(stats.totalKeluar)}
             </p>
         </div>
+
+        {/* KARTU 3: SALDO AKHIR */}
+        <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
+            <h3 className="text-sm font-medium text-slate-500">Saldo Akhir</h3>
+            <p className="text-3xl font-bold text-blue-600 mt-2">
+              {formatNumber(saldoAkhir)}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              (Awal: {formatNumber(stats.saldoAwal)})
+            </p>
+        </div>
+
       </div>
 
       {/* SPLIT VIEW: GRAFIK & TABEL */}
@@ -109,7 +134,6 @@ export default async function Home({
           <LineChartCard data={stats.grafikData} isEditable={isLoggedIn} />
         </div>
         <div className="lg:col-span-1 h-full">
-          {/* UPDATE: Mengirim props 'saldoAwal' ke komponen tabel */}
           <DashboardTable 
             data={stats.grafikData} 
             saldoAwal={stats.saldoAwal} 
