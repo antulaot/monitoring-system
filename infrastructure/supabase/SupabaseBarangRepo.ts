@@ -1,7 +1,7 @@
 import { TransaksiRepository } from "@/core/repositories/TransaksiRepository";
 import { TransaksiBarang } from "@/core/entities/TransaksiBarang";
 import { createClient } from "@/utils/supabase/server"; // Import dari utils Anda yg sudah ada
-import { BarangRepository, SelectOption, RiwayatItem, DashboardFilterParams } from "@/core/repositories/BarangRepository";
+import { BarangRepository, SelectOption, RiwayatPaginated, DashboardFilterParams } from "@/core/repositories/BarangRepository";
 import { Barang, StokDetail, RiwayatDetail } from "@/core/entities/Barang";
 
 export class SupabaseTransaksiRepo implements TransaksiRepository {
@@ -238,32 +238,31 @@ async updateStok(input: {
   }
 
   // ... kode sesudahnya ...
-async getRiwayatList(): Promise<RiwayatDetail[]> {
+async getRiwayatList(page: number, limit: number): Promise<RiwayatPaginated> {
     const supabase = await createClient();
 
-    // PERBAIKAN: Hapus semua komentar (--) di dalam string ini
-    const { data, error } = await supabase
+    // Rumus Pagination Supabase (0-based index)
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data, count, error } = await supabase
       .from('riwayat_transaksi')
       .select(`
-        id, 
-        created_at, 
-        tipe_transaksi, 
-        jumlah,
-        user_id,
+        id, created_at, tipe_transaksi, jumlah, user_id,
         master_barang ( nama_barang, satuan ),
-        master_lokasi ( nama_lokasi ),
-        
+        master_lokasi ( nama_lokasi, master_pt ( nama_pt ) ),
         master_kategori ( nama_kategori )
-      `)
-      .order('created_at', { ascending: false });
+      `, { count: 'exact' }) // <--- Request Total Data
+      .order('created_at', { ascending: false })
+      .range(start, end); // <--- Ambil Potongan Data
 
     if (error) {
-      console.error("Gagal load riwayat:", error);
-      return [];
+      console.error("Gagal load riwayat page:", error);
+      return { data: [], total: 0 };
     }
 
-    // Mapping... (kode bawahnya tetap sama)
-    return data.map((d: any) => ({
+    // Mapping Data
+    const mappedData = data.map((d: any) => ({
       id: d.id,
       tanggal: d.created_at,
       namaBarang: d.master_barang?.nama_barang || 'Barang Dihapus',
@@ -273,7 +272,12 @@ async getRiwayatList(): Promise<RiwayatDetail[]> {
       namaKategori: d.master_kategori?.nama_kategori || '-',
       tipe: d.tipe_transaksi,
       jumlah: Number(d.jumlah),
-      userEmail: 'Admin' 
+      userEmail: 'Admin'
     }));
+
+    return { 
+      data: mappedData, 
+      total: count || 0 // Total baris di database (untuk hitung page)
+    };
   }
 }

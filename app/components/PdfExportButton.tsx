@@ -5,7 +5,7 @@ import { useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toPng } from "html-to-image"; // <--- LIBRARY PENGGANTI
-import { getAllDataForPdf } from "../actions/pdfData";
+import { getAllDataForPdf } from "../actions/pdf";
 
 interface Props {
   lokasiId?: number;

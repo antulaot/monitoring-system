@@ -1,29 +1,38 @@
 import { Barang, RiwayatDetail } from "../entities/Barang";
-import { TransaksiInput } from "../use-cases/TransactStok";
+
+// 1. Definisikan Return Type untuk Pagination
+export interface RiwayatPaginated {
+  data: RiwayatDetail[];
+  total: number;
+}
 
 export interface DashboardFilterParams {
   lokasiId?: number;
   kategoriId?: number;
 }
-export interface RiwayatItem {
-  id: number;
-  tanggal: string;
-  tipe: 'masuk' | 'keluar';
-  jumlah: number;
-}
+
 export interface SelectOption {
   id: number;
   label: string;
 }
 
 export interface BarangRepository {
-  getAll(): Promise<Barang[]>;
-  getAllRiwayat(filters?: DashboardFilterParams): Promise<RiwayatItem[]>;
-  getRiwayatList(): Promise<RiwayatDetail[]>;
+  getAll(search?: string): Promise<Barang[]>;
+  getAllRiwayat(filters?: DashboardFilterParams): Promise<RiwayatDetail[]>;
   
-  create(barang: Omit<Barang, 'id' | 'totalStok' | 'listStok'>): Promise<void>;
+  // 2. UPDATE method ini agar menerima page & limit, dan return RiwayatPaginated
+  getRiwayatList(page: number, limit: number): Promise<RiwayatPaginated>;
 
-  updateStok(input: { barangId: number; lokasiId: number; kategoriId: number; jumlah: number; tipe: 'masuk'|'keluar' }): Promise<void>;
+  create(barang: Omit<Barang, 'id' | 'totalStok' | 'listStok'>): Promise<void>;
+  updateStok(input: { 
+    barangId: number; 
+    lokasiId: number; 
+    kategoriId: number; 
+    jumlah: number; 
+    tipe: 'masuk'|'keluar';
+    tanggal?: Date; 
+  }): Promise<void>;
+
   getLokasiOptions(): Promise<SelectOption[]>;
   getKategoriOptions(): Promise<SelectOption[]>;
 }

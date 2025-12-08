@@ -3,7 +3,8 @@ import { GetDashboardData } from "@/core/use-cases/GetDashboardData";
 import LineChartCard from "./components/LineChartCard";
 import DashboardTable from "./components/DashboardTable";
 import DashboardFilter from "./components/DashboardFilter";
-// PENTING: JANGAN LUPA IMPORT PDF BUTTON
+// Import Interface DashboardStats agar tidak error
+import { DashboardStats } from "@/core/entities/DashboardStats"; 
 import PdfExportButton from "./components/PdfExportButton"; 
 import { createClient } from "@/utils/supabase/server";
 import { Metadata } from "next";
@@ -38,8 +39,9 @@ export default async function Home({
   const lokasiOpts = await repo.getLokasiOptions();
   const kategoriOpts = await repo.getKategoriOptions();
 
-  // Initial State
-  let stats = { 
+  // --- PERBAIKAN ERROR MERAH DISINI ---
+  // Kita tambahkan ": DashboardStats" agar TypeScript tidak menganggap array kosong sebagai 'never[]'
+  let stats: DashboardStats = { 
     grafikData: [], 
     totalTransaksi: 0, 
     totalMasuk: 0, 
@@ -62,7 +64,7 @@ export default async function Home({
   // Helper Format Angka
   const formatNumber = (num: number) => num.toLocaleString('id-ID');
 
-  // HITUNG SALDO AKHIR (Saldo Awal + Masuk - Keluar)
+  // HITUNG SALDO AKHIR
   const saldoAkhir = stats.saldoAwal + stats.totalMasuk - stats.totalKeluar;
 
   return (
@@ -81,12 +83,12 @@ export default async function Home({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {/* TOMBOL PDF EXPORT (FITUR SEBELUMNYA) */}
+          {/* TOMBOL PDF EXPORT */}
           <PdfExportButton 
             lokasiId={filterLokasi}
             kategoriId={filterKategori}
             labelLokasi={labelLokasi || "Semua"}
-            chartId="dashboard-chart-area" // ID yang ada di LineChartCard
+            chartId="dashboard-chart-area"
           />
 
           <DashboardFilter 
@@ -96,36 +98,21 @@ export default async function Home({
         </div>
       </div>
 
-      {/* KARTU STATISTIK RINGKAS (REVISI: MASUK, KELUAR, SALDO AKHIR) */}
+      {/* KARTU STATISTIK RINGKAS */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 flex-shrink-0">
-        
-        {/* KARTU 1: TOTAL MASUK */}
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
             <h3 className="text-sm font-medium text-slate-500">Total Masuk</h3>
-            <p className="text-3xl font-bold text-green-600 mt-2">
-              +{formatNumber(stats.totalMasuk)}
-            </p>
+            <p className="text-3xl font-bold text-green-600 mt-2">+{formatNumber(stats.totalMasuk)}</p>
         </div>
-
-        {/* KARTU 2: TOTAL KELUAR */}
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
             <h3 className="text-sm font-medium text-slate-500">Total Keluar</h3>
-            <p className="text-3xl font-bold text-orange-600 mt-2">
-              -{formatNumber(stats.totalKeluar)}
-            </p>
+            <p className="text-3xl font-bold text-orange-600 mt-2">-{formatNumber(stats.totalKeluar)}</p>
         </div>
-
-        {/* KARTU 3: SALDO AKHIR */}
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
             <h3 className="text-sm font-medium text-slate-500">Saldo Akhir</h3>
-            <p className="text-3xl font-bold text-blue-600 mt-2">
-              {formatNumber(saldoAkhir)}
-            </p>
-            <p className="text-[10px] text-slate-400 mt-1">
-              (Awal: {formatNumber(stats.saldoAwal)})
-            </p>
+            <p className="text-3xl font-bold text-blue-600 mt-2">{formatNumber(saldoAkhir)}</p>
+            <p className="text-[10px] text-slate-400 mt-1">(Awal: {formatNumber(stats.saldoAwal)})</p>
         </div>
-
       </div>
 
       {/* SPLIT VIEW: GRAFIK & TABEL */}
@@ -134,10 +121,7 @@ export default async function Home({
           <LineChartCard data={stats.grafikData} isEditable={isLoggedIn} />
         </div>
         <div className="lg:col-span-1 h-full">
-          <DashboardTable 
-            data={stats.grafikData} 
-            saldoAwal={stats.saldoAwal} 
-          />
+          <DashboardTable data={stats.grafikData} saldoAwal={stats.saldoAwal} />
         </div>
       </div>
 
